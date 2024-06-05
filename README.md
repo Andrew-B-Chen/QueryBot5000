@@ -3,9 +3,13 @@
 in the future based on historical data. This is the source code for our 
 [SIGMOD paper](http://www.cs.cmu.edu/~malin199/publications/2018.forecasting.sigmod.pdf): **_Query-based Workload Forecasting for Self-Driving Database Management Systems_**.
 
-## Run forecasting on a sample of BusTracker workload:
+## Run forecasting on a sample of BusTracker workload on Windows:
+    pip install -r requirements.txt
+    ./run.bat
+## Run forecasting on a sample of BusTracker workload on Linux (may not work):
+    pip install -r requirements.txt
     ./run.sh
-We provide an example of the workload forecasting for a sample subset of **BusTracker** workload. The prediction specified in the script is on 1 hour interval and 3 day horizon. The predicted arrival rates with different models for each cluster are in the _prediction-results_ folder. All the query templates of the workload can be found at _templates.txt_.
+We provide an example of the workload forecasting for a sample subset of **BusTracker** workload. The prediction specified in the script is on 10-minute intervals and a 6-hour horizon. The predicted arrival rates with different models for each cluster are in the _prediction-results_ folder. All the query templates of the workload can be found at _templates.txt_.
 
 The default experimental setting is to run under CPU. If you have a GPU, you can change [this parameter](https://github.com/malin1993ml/QueryBot5000/blob/master/forecaster/exp_multi_online_continuous.py#L101) to _True_ to enable GPU training.
 
