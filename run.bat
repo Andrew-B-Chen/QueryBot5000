@@ -21,4 +21,4 @@ forecaster\generate_ensemble_hybrid.py prediction-results\agg-10\horizon-360\ar 
 forecaster\generate_ensemble_hybrid.py prediction-results\agg-10\horizon-360\ensemble prediction-results\agg-10\horizon-360\kr prediction-results\agg-10\horizon-360\hybrid True
 
 REM Plot results
-forecaster\plot-prediction-accuracy.py prediction-results
+forecaster\plot-prediction-accuracy.py prediction-results False

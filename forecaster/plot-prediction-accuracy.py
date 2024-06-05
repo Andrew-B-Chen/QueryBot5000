@@ -90,16 +90,16 @@ def PlotData(file_path, data):
     dates = [date for date in dates if start_date <= date <= end_date]
 
     # Plot the predicted and actual values
-    # plt.figure(figsize=(12, 3))
-    # plt.plot(dates, actual, linestyle='-', color='dodgerblue', label='Actual')
-    # plt.plot(dates, predicted, linestyle='-', color='tomato', label='Prediction')
-    # if interval == 1: plt.ylabel('Queries per minute')
-    # else: plt.ylabel(f'Queries per {interval} minutes')
-    # plt.title(f'Predicted vs. Actual Query Arrival Rates for {method.upper()} (Interval = {interval} minutes, Horizon = {horizon} minutes)')
-    # plt.grid(True)
-    # plt.legend()
-    # plt.savefig(GRAPH_DIR + f'{method}_{interval}_{horizon}.png')
-    # plt.show()
+    plt.figure(figsize=(12, 3))
+    plt.plot(dates, actual, linestyle='-', color='dodgerblue', label='Actual')
+    plt.plot(dates, predicted, linestyle='-', color='tomato', label='Prediction')
+    if interval == 1: plt.ylabel('Queries per minute')
+    else: plt.ylabel(f'Queries per {interval} minutes')
+    plt.title(f'Predicted vs. Actual Query Arrival Rates for {method.upper()} (Interval = {interval} minutes, Horizon = {horizon} minutes)')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig(GRAPH_DIR + f'{method}_{interval}_{horizon}.png')
+    plt.show()
 
 # Plot a comparison of the MSEs for each model / prediction horizon
 def PlotMSE():
@@ -131,7 +131,7 @@ def PlotMSE():
     
     plt.show()
 
-def Main(input_dir):
+def Main(input_dir, plot_mse):
     if not os.path.exists(GRAPH_DIR):
         os.makedirs(GRAPH_DIR)
 
@@ -140,7 +140,7 @@ def Main(input_dir):
     for file_path, data in data_dict.items():
         PlotData(file_path, data)
     
-    PlotMSE()
+    if plot_mse == "True": PlotMSE()
 
 # ==============================================
 # main
@@ -151,5 +151,6 @@ if __name__ == '__main__':
 
     Args:
         arg1 : the result dir
+        arg2 : whether to plot MSE
     """
-    Main(sys.argv[1])
+    Main(sys.argv[1], sys.argv[2])
