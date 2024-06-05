@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 
 import sys
 import glob
@@ -12,7 +12,7 @@ import re
 import argparse
 from multiprocessing import Process
 
-csv.field_size_limit(sys.maxsize)
+# csv.field_size_limit(sys.maxsize)
 
 TIME_STAMP_STEP = datetime.timedelta(minutes=1)
 STATEMENTS = ['select', 'SELECT', 'INSERT', 'insert', 'UPDATE', 'update', 'delete', 'DELETE']
@@ -122,8 +122,8 @@ def ProcessData(path, output_dir, num_logs, config):
         print(e)
 
 
-    MakeCSVFiles(templated_workload, min_timestamp, max_timestamp, output_dir + '/' +
-            path.split('/')[-1].split('.gz')[0] + '/')
+    MakeCSVFiles(templated_workload, min_timestamp, max_timestamp, output_dir + os.path.sep +
+            path.split(os.path.sep)[-1].split('.gz')[0] + os.path.sep)
 
     #end = time.time()
     #print("Preprocess and template extraction time for %s: %s" % (path, str(end - start)))
@@ -190,7 +190,7 @@ def MakeCSVFiles(workload_dict, min_timestamp, max_timestamp, output_dir):
 
         # write to csv file
         with open(output_dir + 'template' + str(template_count) +
-                  ".csv", 'w') as csvfile:
+                  ".csv", 'w', newline='') as csvfile:
             template_writer = csv.writer(csvfile, dialect='excel')
             template_writer.writerow([num_queries_for_template, template])
             for entry in sorted(template_timestamps.keys()):

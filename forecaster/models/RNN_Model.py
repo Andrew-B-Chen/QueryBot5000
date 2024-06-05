@@ -66,13 +66,13 @@ class RNN_Model(nn.Module):
         bptt = input.size(0)
         bsz = input.size(1)
         
-        input = input.view(bptt*bsz, -1)
+        input = input.reshape(bptt*bsz, -1)
         emb = self.encoder(input)
-        emb = emb.view(bptt, bsz, -1)
+        emb = emb.reshape(bptt, bsz, -1)
         
         output, hidden = self.rnn(emb, hidden)
         decoded = self.decoder(output.view(output.size(0)*output.size(1), output.size(2)))
-        return decoded.view(output.size(0), output.size(1), decoded.size(1)), hidden
+        return decoded.reshape(output.size(0), output.size(1), decoded.size(1)), hidden
 
     def init_hidden(self, bsz):
         weight = next(self.parameters()).data

@@ -73,7 +73,7 @@ def GetDataDict(input_dir):
 
 
 def WriteResult(path, dates, actual, predict):
-    with open(path, "w") as csvfile:
+    with open(path, "w", newline='') as csvfile:
         writer = csv.writer(csvfile, quoting = csv.QUOTE_ALL)
         for x in range(len(dates)):
             writer.writerow([dates[x], actual[x], predict[x]])

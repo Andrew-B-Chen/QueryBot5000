@@ -24,7 +24,7 @@ from sortedcontainers import SortedDict
 from sklearn.preprocessing import normalize
 from sklearn.neighbors import NearestNeighbors
 
-csv.field_size_limit(sys.maxsize)
+# csv.field_size_limit(sys.maxsize)
 
 
 # Only looks at the csv files for the first 10 templates for testing purpose

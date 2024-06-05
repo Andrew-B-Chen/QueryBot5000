@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+
 
 import importlib
 import torch
@@ -14,6 +14,9 @@ import argparse
 import matplotlib.pyplot as plt
 import scipy as sp
 import scipy.io
+from sklearn.linear_model import BayesianRidge
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
 import shutil
 import pickle
 
@@ -132,7 +135,7 @@ class Args:
         # warm up the prediction of RNN using the latest observed data (days)
         self.paddling_intervals = 7
         # training data size (days)
-        self.training_intervals = 25
+        self.training_intervals = {1:6, 5:12, 10:27, 20:27, 30:27, 60:27, 120:27}
         # Number of clusters to train together
         self.top_cluster_num = 3
 
@@ -148,6 +151,53 @@ class LinearModel:
 class KernelRegressionModel:
     def __init__(self):
         self.data = None
+
+# %%
+# Bayesian Ridge Regression (BRR) model
+class BayesianRidgeModel:
+    def __init__(self):
+        self.models = []
+
+    def train(self, X, Y):
+        # Create a separate model for each cluster
+        for col in range(0, NTOKENS):
+            y = Y[:, col]
+            model = BayesianRidge()
+            model.fit(X, y)
+            self.models.append(model)
+
+    def predict(self, X):
+        Y = []
+        # Run the model corresponding to each cluster
+        for col in range(0, NTOKENS):
+            y = self.models[col].predict(X)
+            Y.append(y)
+        return np.array(Y).T
+
+# %%
+# Support Vector Regression (SVR) model
+class SupportVectorModel:
+    def __init__(self):
+        self.models = []
+        self.scaler = StandardScaler()
+
+    def train(self, X, Y):
+        X_scaled = self.scaler.fit_transform(X)
+        # Create a separate model for each cluster
+        for col in range(0, NTOKENS):
+            y = Y[:, col]
+            model = SVR()
+            model.fit(X_scaled, y)
+            self.models.append(model)
+
+    def predict(self, X):
+        Y = []
+        # Run the model corresponding to each cluster
+        X_scaled = self.scaler.transform(X)
+        for col in range(0, NTOKENS):
+            y = self.models[col].predict(X_scaled)
+            Y.append(y)
+        return np.array(Y).T
 
 # split the data into batches
 def batchify(data, bsz):
@@ -305,6 +355,11 @@ def train_pass(args, method, model, data, criterion, lr, bptt, clip, log_interva
         model.data = (x, y)
         return
 
+    if method == 'brr' or method == 'svr':
+        x, y = GeneratePair(data, args.horizon, args.regress_dim)
+        model.train(x, y)
+        return
+
     # Turn on training mode which enables dropout.
     model.train()
         
@@ -420,11 +475,15 @@ def evaluate_pass(args, method, model, data, criterion, bptt):
         k_x, k_y = model.data
 
         pairwise_sq_dists = sp.spatial.distance.cdist(x, k_x, 'seuclidean')
-        kernel = sp.exp(-pairwise_sq_dists)
+        kernel = np.exp(-pairwise_sq_dists)
         y_hat = kernel.dot(k_y) / np.sum(kernel, axis = 1, keepdims = True)
 
         return np.mean((y - y_hat) ** 2), y, y_hat
 
+    if method == 'brr' or method == 'svr':
+        x, y = GeneratePair(data, args.horizon, args.regress_dim)
+        y_hat = model.predict(x)
+        return np.mean((y - y_hat) ** 2), y, y_hat
 
     model.eval()
         
@@ -544,6 +603,11 @@ def GetModel(args, data, method):
     if method == "kr":
         return KernelRegressionModel()
 
+    if method == "brr":
+        return BayesianRidgeModel()
+    
+    if method == "svr":
+        return SupportVectorModel()
 
     #model = RNN_RBF_Model(args.model, ntokens, args.nRFF, args.nhid, args.nlayers, args.dropout, args.tied)
     #model = PSRNN_Nonlinear_Model_backup.PSRNN_Nonlinear_Model_backup(args.model, ntokens, args.nRFF, args.nhid, args.nlayers, args.dropout, args.tied)
@@ -596,6 +660,9 @@ def Normalize(data):
 
 def Predict(args, config, top_cluster, trajs, method):
 
+    train_time = 0   # total time spent training
+    predict_time = 0 # total time spent predicting
+
     for date, cluster_list in top_cluster[args.start_pos // args.interval:- max(args.horizon //
             args.interval, 1)]:
         # Training delta
@@ -634,6 +701,7 @@ def Predict(args, config, top_cluster, trajs, method):
         criterion = nn.MSELoss()
 
         # Loop over epochs.
+        train_start_time = time.time()
         for epoch in range(1, args.epochs + 1):
             print('epoch: ', epoch)
             epoch_start_time = time.time()
@@ -641,14 +709,17 @@ def Predict(args, config, top_cluster, trajs, method):
             if epoch > 100:
                 lr = 0.2
             train_pass(args, method, model, train_data, criterion, lr, args.bptt, args.clip, args.log_interval)
-            print('about to evaluate: ')
-            val_loss, y, y_hat, = evaluate_pass(args, method, model, test_data, criterion, args.bptt)
-            Utilities.prettyPrint('Validation Loss: Epoch'+str(epoch), np.mean((y[-args.interval:] -
-                y_hat[-args.interval:]) ** 2))
+            # print('about to evaluate: ')
+            # val_loss, y, y_hat, = evaluate_pass(args, method, model, test_data, criterion, args.bptt)
+            # Utilities.prettyPrint('Validation Loss: Epoch'+str(epoch), np.mean((y[-args.interval:] -
+            #     y_hat[-args.interval:]) ** 2))
+        train_time += time.time() - train_start_time
 
         # Run on test data.
         print('about to test')
+        predict_start_time = time.time()
         test_loss, y, y_hat= evaluate_pass(args, method, model, test_data, criterion, args.bptt)
+        predict_time += time.time() - predict_start_time
 
         y = y[-args.interval:]
         y_hat = y_hat[-args.interval:]
@@ -665,19 +736,25 @@ def Predict(args, config, top_cluster, trajs, method):
 
         #WriteResult(config['output_dir'] + "total.csv", predict_dates, np.sum(y, axis = 1),
         #        np.sum(y_hat, axis = 1))
+    
+    print("Average training time:", train_time / len(top_cluster), "seconds per day.")
+    print("Average prediction time:", predict_time / (num_predictions / args.top_cluster_num) * args.horizon, "seconds.")
 
+num_predictions = 0   # number of predicted points
 
 def WriteResult(path, dates, actual, predict):
-    with open(path, "a") as csvfile:
+    global num_predictions
+    with open(path, "a", newline='') as csvfile:
         writer = csv.writer(csvfile, quoting = csv.QUOTE_ALL)
         for x in range(len(dates)):
             writer.writerow([dates[x], actual[x], predict[x]])
+        num_predictions += len(dates)
 
 def Main(config, method, aggregate, horizon, input_dir, output_dir, cluster_path):
     args = Args()
     args.epochs = args.epochs[config["name"]]
 
-    if method == 'ar' or method == "arma" or method == "kr":
+    if method == 'ar' or method == "arma" or method == "kr" or method == "brr" or method == "svr":
         args.epochs = 1
 
     if config['name'] == "admission":
@@ -712,6 +789,7 @@ def Main(config, method, aggregate, horizon, input_dir, output_dir, cluster_path
     args.bptt = args.bptt[aggregate]
     args.batch_size = args.batch_size[aggregate]
     args.regress_dim = args.regress_dim[aggregate]
+    args.training_intervals = args.training_intervals[aggregate]
 
     input_dir = input_dir or config['input_dir']
     output_dir = output_dir or config['output_dir']

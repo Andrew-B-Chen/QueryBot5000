@@ -33,7 +33,7 @@ MAX_CLUSTER_NUM = 3
 
 # If it's the full trace used for kernel regression, always aggregate the data
 # into 10 minutes intervals
-FULL = True
+FULL = False
 
 # If it's the noisy data evaluation, use a smaller time gap to calculate the
 # total volume of the largest clusters. In the future we should automatically
@@ -228,7 +228,7 @@ def GenerateData(min_date, max_date, data, data_accu, templates, assignment_dict
     return top_clusters, coverage
 
 def WriteResult(path, date, data):
-    with open(path, "a") as csvfile:
+    with open(path, "a", newline='') as csvfile:
         writer = csv.writer(csvfile, quoting = csv.QUOTE_ALL)
         writer.writerow([date, data])
 

@@ -12,7 +12,7 @@ import re
 import argparse
 from multiprocessing import Process
 
-csv.field_size_limit(sys.maxsize)
+# csv.field_size_limit(sys.maxsize)
 
 STATEMENTS = ['select', 'SELECT', 'INSERT', 'insert', 'UPDATE', 'update', 'delete', 'DELETE']
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -38,7 +38,7 @@ def MakeCSVFiles(workload_dict, min_timestamp, max_timestamp, output_dir):
 
         # write to csv file
         with open(output_dir + 'template' + str(template_count) +
-                  ".csv", 'w') as csvfile:
+                  ".csv", 'w', newline='') as csvfile:
             template_writer = csv.writer(csvfile, dialect='excel')
             template_writer.writerow([num_queries_for_template, template])
             for entry in sorted(template_timestamps):
@@ -96,7 +96,7 @@ def Combine(input_dir, output_dir):
     min_timestamp = datetime.datetime.max
     max_timestamp = datetime.datetime.min
 
-    target = os.path.join(input_dir, "*/*template*.csv")
+    target = os.path.join(input_dir, "*" + os.path.sep + "*template*.csv")
     print(target)
     files = sorted([ x for x in glob.glob(target) ])
     cnt = 0
@@ -135,4 +135,4 @@ if __name__ == '__main__':
     aparser.add_argument('--output_dir', help='Output Data Directory')
     args = vars(aparser.parse_args())
 
-    Combine(args['input_dir'], args['output_dir'] + '/')
+    Combine(args['input_dir'], args['output_dir'] + os.path.sep)
