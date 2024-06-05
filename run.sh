@@ -1,11 +1,7 @@
 #!/bin/bash
 
 # Copy and decompress the sample data file
-fileid="1imVPNXk8mGU0v9OOhdp0d9wFDuYqARwZ"
-filename="tiramisu-sample.tar.gz"
-html=`curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"`
-curl -Lb ./cookie "https://drive.google.com/uc?export=download&`echo ${html}|grep -Po '(confirm=[a-zA-Z0-9\-_]+)'`&id=${fileid}" -o ${filename}
-tar -xvzf ${filename}
+tar -xvzf "tiramisu-sample.tar.gz"
 
 # Generate and combine query templates
 ./pre-processor/templatizer.py tiramisu --dir tiramisu-sample/ --output templates
@@ -16,8 +12,15 @@ tar -xvzf ${filename}
 ./clusterer/generate-cluster-coverage.py --project tiramisu --assignment online-clustering-results/None-0.8-assignments.pickle --output_csv_dir online-clusters/ --output_dir cluster-coverage/
 
 # Run forecasting models
-./forecaster/run_sample.sh
+./forecaster/exp_multi_online_continuous.py tiramisu --method ar --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage/coverage.pickle --output_dir prediction-results
+./forecaster/exp_multi_online_continuous.py tiramisu --method kr --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage/coverage.pickle --output_dir prediction-results
+./forecaster/exp_multi_online_continuous.py tiramisu --method rnn --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage/coverage.pickle --output_dir prediction-results
+./forecaster/exp_multi_online_continuous.py tiramisu --method brr --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage/coverage.pickle --output_dir prediction-results
+./forecaster/exp_multi_online_continuous.py tiramisu --method svr --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage/coverage.pickle --output_dir prediction-results
 
 # Generate ENSEMBLE and HYBRID results
-./forecaster/generate_ensemble_hybrid.py prediction-results/agg-60/horizon-4320/ar/ prediction-results/agg-60/horizon-4320/noencoder-rnn/ prediction-results/agg-60/horizon-4320/ensemble False
-./forecaster/generate_ensemble_hybrid.py  prediction-results/agg-60/horizon-4320/ensemble prediction-results/agg-60/horizon-4320/kr prediction-results/agg-60/horizon-4320/hybrid True
+./forecaster/generate_ensemble_hybrid.py prediction-results/agg-10/horizon-360/ar/ prediction-results/agg-10/horizon-360/noencoder-rnn/ prediction-results/agg-10/horizon-360/ensemble False
+./forecaster/generate_ensemble_hybrid.py  prediction-results/agg-10/horizon-360/ensemble prediction-results/agg-10/horizon-360/kr prediction-results/agg-10/horizon-360/hybrid True
+
+# Plot results
+./forecaster/plot-prediction-accuracy.py prediction-results

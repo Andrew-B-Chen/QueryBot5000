@@ -19,3 +19,6 @@ forecaster\exp_multi_online_continuous.py tiramisu --method svr --aggregate 10 -
 REM Generate ENSEMBLE and HYBRID results (6-hour trace)
 forecaster\generate_ensemble_hybrid.py prediction-results\agg-10\horizon-360\ar prediction-results\agg-10\horizon-360\noencoder-rnn prediction-results\agg-10\horizon-360\ensemble False
 forecaster\generate_ensemble_hybrid.py prediction-results\agg-10\horizon-360\ensemble prediction-results\agg-10\horizon-360\kr prediction-results\agg-10\horizon-360\hybrid True
+
+REM Plot results
+forecaster\plot-prediction-accuracy.py prediction-results
