@@ -7,7 +7,7 @@ pre-processor\csv-combiner.py --input_dir templates --output_dir tiramisu-combin
 
 REM Run through clustering algorithm
 clusterer\online_clustering.py --dir tiramisu-combined-csv --rho 0.8
-clusterer\generate-cluster-coverage.py --project tiramisu --assignment online-clustering-results\None-0.8-assignments.pickle --output_csv_dir online-clusters --output_dir cluster-coverage
+clusterer\generate-cluster-coverage.py --project tiramisu --assignment online-clustering-results\None-0.8-assignments.pickle --output_csv_dir online-clusters --output_dir cluster-coverage\
 
 REM Run forecasting models (6-hour trace)
 forecaster\exp_multi_online_continuous.py tiramisu --method ar --aggregate 10 --horizon 360 --input_dir online-clusters --cluster_path cluster-coverage\coverage.pickle --output_dir prediction-results
