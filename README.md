@@ -7,7 +7,7 @@ in the future based on historical data. This is the source code for our
 Download the [BusTracker dataset](https://drive.google.com/file/d/1imVPNXk8mGU0v9OOhdp0d9wFDuYqARwZ/view?usp=sharing), then move the downloaded tar.gz file to your cloned repository.
 ### Windows:
     pip install -r requirements.txt
-    ./run.bat
+    run.bat
 ### Linux (may not currently work):
     pip install -r requirements.txt
     ./run.sh
